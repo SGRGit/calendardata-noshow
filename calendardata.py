@@ -2,8 +2,9 @@ import json
 from flask import Flask, jsonify
 
 app = Flask(__name__)
+app.config["DEBUG"] = True
 
-@app.route('/event_calender')
+@app.route('/', methods=['GET'])
 def event_calender():
 	finalList = []
 	finalDict = {'date': '', 'event': []}
@@ -36,5 +37,7 @@ def event_calender():
 	return jsonify(finalList)
 
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port='7000', threaded=True, debug=True)
+#if __name__ == "__main__":
+#    app.run(host='0.0.0.0', port='7000', threaded=True, debug=True)
+
+app.run()
