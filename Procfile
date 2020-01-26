@@ -1,1 +1,1 @@
-web gunicorn gencaldata:app
+web gunicorn calendardata:app
