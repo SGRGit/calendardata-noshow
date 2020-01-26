@@ -10,59 +10,90 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/')
 def event_calender():
+    base_dir = os.getcwd()
+    data_path = base_dir + '/static/json/JSON_Data.json'
+
+    with open(data_path, "r") as f:
+        lines = str(f.readlines())
 	
-	base_dir = os.getcwd()
-	data_path = base_dir + '/static1/json/JSON_Data.json'
-	df = pd.read_json(data_path)
+	#Format the patient json to json format
+    a = lines.split("data =")[1]
+    a = a.split("\'")[1]
+    a = a.split("]")[0]
+    a = a.split("[")[1]
 
-	today = datetime.datetime.today()
-	week = today + datetime.timedelta(days=7)
-	op1 = df[df['scdt'] >= today.strftime('%Y-%m-%d')]
-	op2 = op1[op1['scdt'] < week.strftime('%Y-%m-%d')]
-	date_unique = op2['scdt'].unique()
+	#Create Dictionary
+    dic = eval(a)
 
-	finalList = []
-	finalDict = {'date': '', 'event': []}
+	#Create Derived Columns
+    for i in range(len(dic)):
+        if (dic[i]['Confirmed']) == '1':
+            dic[i]['Cnf'] = 1
+        else:
+            dic[i]['Cnf'] = 0
+    
+    for i in range(len(dic)):
+        if (dic[i]['pred']) > 50:
+            dic[i]['High'] = 1
+        else:
+            dic[i]['High'] = 0
+    
+    for i in range(len(dic)):
+        if (dic[i]['pred']) <= 50:
+            dic[i]['Lo'] = 1
+        else:
+            dic[i]['Lo'] = 0
 
-	eventList = []
-	nested_dict = {'name': '', 'value':0, 'color':''}
-	
+	#Convert to dataframe
+    diclist = list(dic)
+    df = pd.DataFrame(diclist)
+    df_new = pd.DataFrame()
+    df_new = df [['pt']]
+    df_new['apdt'] = df [['apdt']]
+    df_new['High'] = df [['High']]
+    df_new['Lo'] = df [['Lo']]
+    df_new['Cnf'] = df [['Cnf']]
 
-	nested_dict['name'] = 'Appointments'
-	nested_dict['value'] = 132
-	nested_dict['color'] = 'violet'
-	
-	eventList.append(dict(nested_dict))
+	#Calculate aggregate metrices
+    df_op = df_new.groupby(['apdt'])['High'].sum()
+    df_op = df_op.to_frame()
+    df_op['Lo'] = df_new.groupby(['apdt'])['Lo'].sum()
+    df_op['Cnf'] = df_new.groupby(['apdt'])['Cnf'].sum()
+    df_op['Total'] = df_new.groupby(['apdt'])['pt'].count()
+    df_op = df_op.reset_index()
+    df_op = df_op.rename(columns={"apdt": "date"})
 
-	nested_dict['name'] = 'Confirmed'
-	nested_dict['value'] = 32
-	nested_dict['color'] = 'green'
-	
-	eventList.append(dict(nested_dict))
+	#Convert to Dictionary
+    df_dict = df_op.to_dict('records')
+    
+    dlist = []
+    for i in range(len(df_dict)):
+        df_newdict = {
+        "date": df_dict[i]['date'],
+        "event": [
+            {
+            "color": "violet", 
+            "name": "Appointments", 
+            "value": df_dict[i]['Total']
+            }, 
+            {
+            "color": "green", 
+            "name": "Confirmed", 
+            "value": df_dict[i]['Cnf']
+            }, 
+            {
+            "color": "red", 
+            "name": "Low Probability", 
+            "value": df_dict[i]['Lo']
+            }, 
+            {
+            "color": "amber", 
+            "name": "High Probability", 
+            "value": df_dict[i]['High']
+            }]
+            }
+        dlist.append(df_newdict.copy())
 
-	nested_dict['name'] = 'No show'
-	nested_dict['value'] = 21
-	nested_dict['color'] = 'red'
-	
-	eventList.append(dict(nested_dict))
-
-	nested_dict['name'] = 'High Probability'
-	nested_dict['value'] = 34
-	nested_dict['color'] = 'amber'
-	
-	eventList.append(dict(nested_dict))
-
-	for x in date_unique:
-		finalDict['date'] = str(x)
-		# current_date =  df['scdt']==x
-		# df_filter = df[current_date]
-		# len(df_filter.index)
-		finalDict['event'] = eventList
-		finalList.append(dict(finalDict))
-		
-	#print(finalList)
-	return jsonify(finalList)
-
-
+    return(jsonify(dlist))
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True)	
