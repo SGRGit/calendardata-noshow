@@ -76,12 +76,7 @@ def event_calender():
             "name": "Appointments", 
             "value": df_dict[i]['Total']
             }, 
-            {
-            "color": "green", 
-            "name": "Confirmed", 
-            "value": df_dict[i]['Cnf']
-            }, 
-            {
+           {
             "color": "red", 
             "name": "Low Probability", 
             "value": df_dict[i]['Lo']
