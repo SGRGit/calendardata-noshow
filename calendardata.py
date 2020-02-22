@@ -11,7 +11,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 @app.route('/')
 def event_calender():
     base_dir = os.getcwd()
-    data_path = base_dir + '/static1/json/JSON_Data.json'
+    data_path = base_dir + '/static/json/JSON_Data.json'
 
     with open(data_path, "r") as f:
         lines = str(f.readlines())
@@ -48,20 +48,20 @@ def event_calender():
     diclist = list(dic)
     df = pd.DataFrame(diclist)
     df_new = pd.DataFrame()
-    df_new = df [['pt']]
-    df_new['apdt'] = df [['apdt']]
+    df_new = df [['cd']]
+    df_new['intdt'] = df [['intdt']]
     df_new['High'] = df [['High']]
     df_new['Lo'] = df [['Lo']]
     df_new['Cnf'] = df [['Cnf']]
 
 	#Calculate aggregate metrices
-    df_op = df_new.groupby(['apdt'])['High'].sum()
+    df_op = df_new.groupby(['intdt'])['High'].sum()
     df_op = df_op.to_frame()
-    df_op['Lo'] = df_new.groupby(['apdt'])['Lo'].sum()
-    df_op['Cnf'] = df_new.groupby(['apdt'])['Cnf'].sum()
-    df_op['Total'] = df_new.groupby(['apdt'])['pt'].count()
+    df_op['Lo'] = df_new.groupby(['intdt'])['Lo'].sum()
+    df_op['Cnf'] = df_new.groupby(['intdt'])['Cnf'].sum()
+    df_op['Total'] = df_new.groupby(['intdt'])['cd'].count()
     df_op = df_op.reset_index()
-    df_op = df_op.rename(columns={"apdt": "date"})
+    df_op = df_op.rename(columns={"intdt": "date"})
 
 	#Convert to Dictionary
     df_dict = df_op.to_dict('records')
@@ -76,7 +76,12 @@ def event_calender():
             "name": "Appointments", 
             "value": df_dict[i]['Total']
             }, 
-           {
+            #{
+            #"color": "green", 
+            #"name": "Confirmed", 
+            #"value": df_dict[i]['Cnf']
+            #}, 
+            {
             "color": "red", 
             "name": "Low Probability", 
             "value": df_dict[i]['Lo']
@@ -90,5 +95,8 @@ def event_calender():
         dlist.append(df_newdict.copy())
 
     return(jsonify(dlist))
+#if __name__ == "__main__":
+#    app.run(debug=True)	
+
 if __name__ == "__main__":
-    app.run(debug=True)	
+    app.run(host='0.0.0.0', port='7000', threaded=True, debug=True)
