@@ -73,7 +73,7 @@ def event_calender():
         "event": [
             {
             "color": "violet", 
-            "name": "Appointments", 
+            "name": "Schedules", 
             "value": df_dict[i]['Total']
             }, 
             #{
